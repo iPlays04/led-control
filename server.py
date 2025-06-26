@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, render_template_string
+from flask import Flask, request, redirect, render_template_string, url_for
 import os
 
 app = Flask(__name__)
@@ -75,14 +75,26 @@ HTML = """
 
       <label>Select Effect:</label><br>
       <input type="radio" id="loading" name="color_mode" value="0" {% if color_mode == 0 %}checked{% endif %} onclick="showInputs()">
-      <label for="loading">Loading</label><br>
+      <label for="loading">Flat Colour</label><br>
 
       <input type="radio" id="pulse" name="color_mode" value="1" {% if color_mode == 1 %}checked{% endif %} onclick="showInputs()">
-      <label for="pulse">Pulse</label><br>
+      <label for="pulse">Colour Pulse</label><br>
 
       <input type="radio" id="hex" name="color_mode" value="2" {% if color_mode == 2 %}checked{% endif %} onclick="showInputs()">
-      <label for="hex">HEX</label>
+      <label for="hex">Sparkles</label><br>
       
+      <input type="radio" id="rng" name="color_mode" value="3" {% if color_mode == 3 %}checked{% endif %} onclick="showInputs()">
+      <label for="rng">Disco</label><br>
+
+      <input type="radio" id="rainbow" name="color_mode" value="4" {% if color_mode == 4 %}checked{% endif %} onclick="showInputs()">
+      <label for="rainbow">Rainbow</label><br>
+
+      <input type="radio" id="dyngrad" name="color_mode" value="5" {% if color_mode == 5 %}checked{% endif %} onclick="showInputs()">
+      <label for="dyngrad">Dynamic Gradient</label><br>
+
+      <input type="radio" id="grad" name="color_mode" value="6" {% if color_mode == 6 %}checked{% endif %} onclick="showInputs()">
+      <label for="grad">Static Gradient</label>
+
       <br><br>
 
       <div id="loadingInputs" class="hidden">
@@ -91,34 +103,128 @@ HTML = """
 
       <div id="pulseInputs" class="hidden">
           <label>Pulse Length:</label>
-          <input type="range" id="rangepulseo1" name="o1" min="1" max="50" value="{{ o1 }}">
-          <input type="number" id="numpulseo1" name="o1" min="1" max="50" value="{{ o1 }}"><br>
+          <input type="range" id="rangepulseo1" name="pulse_o1" min="1" max="100" value="{{ o1 }}">
+          <input type="number" id="numpulseo1" name="pulse_o1" min="1" max="100" value="{{ o1 }}"><br>
           <label>Pulse Brightness:</label>
-          <input type="range" id="rangepulseo2" name="o2" min="0" max="30" value="{{ o2 }}">
-          <input type="number" id="numpulseo2" name="o2" min="0" max="30" value="{{ o2 }}"><br>
+          <input type="range" id="rangepulseo2" name="pulse_o2" min="0" max="255" value="{{ o2 }}">
+          <input type="number" id="numpulseo2" name="pulse_o2" min="0" max="255" value="{{ o2 }}"><br>
       </div>
 
       <div id="hexInputs" class="hidden">
-          <label>HEX Code:</label>
-          <input type="text" id="hexCode" name="hexCode" value="#000000"><br>
-      </div>    
+          <label>Sparkle Amount</label>
+          <input type="range" id="rangesparkleo1" name="hex_o1" min="1" max="100" value="{{ o1 }}">
+          <input type="number" id="numsparkleo1" name="hex_o1" min="1" max="100" value="{{ o1 }}"><br>
+          <label>Sparkle Brightness:</label>
+          <input type="range" id="rangesparkleo2" name="hex_o2" min="0" max="255" value="{{ o2 }}">
+          <input type="number" id="numsparkleo2" name="hex_o2" min="0" max="255" value="{{ o2 }}"><br>
+      </div>   
+
+      <div id="rngInputs" class="hidden">
+          
+      </div> 
+
+      <div id="rainbowInputs" class="hidden">
+          
+      </div>
+
+      <div id="dyngradInputs" class="hidden">
+          <label>Red:</label>
+          <input type="range" id="redo1" name="dyngrad_o1" min="0" max="255" value="{{ o1 }}">
+          <input type="number" id="numredo1" name="dyngrad_o1" min="0" max="255" value="{{ o1 }}"><br>
+
+          <label>Green:</label>
+          <input type="range" id="greeno2" name="dyngrad_o2" min="0" max="255" value="{{ o2 }}">
+          <input type="number" id="numgreeno2" name="dyngrad_o2" min="0" max="255" value="{{ o2 }}"><br>
+
+          <label>Blue:</label>
+          <input type="range" id="blueo3" name="dyngrad_o3" min="0" max="255" value="{{ o3 }}">
+          <input type="number" id="numblueo3" name="dyngrad_o3" min="0" max="255" value="{{ o3 }}">
+      </div>
+
+      <div id="gradInputs" class="hidden">
+          <label>Red:</label>
+          <input type="range" id="sredo1" name="grad_o1" min="0" max="255" value="{{ o1 }}">
+          <input type="number" id="snumredo1" name="grad_o1" min="0" max="255" value="{{ o1 }}"><br>
+
+          <label>Green:</label>
+          <input type="range" id="sgreeno2" name="grad_o2" min="0" max="255" value="{{ o2 }}">
+          <input type="number" id="snumgreeno2" name="grad_o2" min="0" max="255" value="{{ o2 }}"><br>
+
+          <label>Blue:</label>
+          <input type="range" id="sblueo3" name="grad_o3" min="0" max="255" value="{{ o3 }}">
+          <input type="number" id="snumblueo3" name="grad_o3" min="0" max="255" value="{{ o3 }}">
+      </div>
 
       <br><br>
 
-      <button type="submit" name="toggle" value="1">{{ button_text }}</button>
+      <button type="submit" name="toggle" value="1">{{button_text}}</button>
     </form>
     <script>
+
+
+        document.getElementById('pulse').addEventListener('click', function() {
+            document.getElementById('rangepulseo1').value = 10;
+            document.getElementById('numpulseo1').value = 10;
+            document.getElementById('rangepulseo2').value = 10;
+            document.getElementById('numpulseo2').value = 10;
+        });
+
+        document.getElementById('hex').addEventListener('click', function() {
+            document.getElementById('rangesparkleo1').value = 10;
+            document.getElementById('numsparkleo1').value = 10;
+            document.getElementById('rangesparkleo2').value = 10;
+            document.getElementById('numsparkleo2').value = 10;
+        });
+
+        document.getElementById('dyngrad').addEventListener('click', function() {
+            document.getElementById('redo1').value = 10;
+            document.getElementById('numredo1').value = 10;
+            document.getElementById('greeno2').value = 10;
+            document.getElementById('numgreeno2').value = 10;
+            document.getElementById('blueo3').value = 10;
+            document.getElementById('numblueo3').value = 10;
+        });
+
+        document.getElementById('grad').addEventListener('click', function() {
+            document.getElementById('sredo1').value = 10;
+            document.getElementById('snumredo1').value = 10;
+            document.getElementById('sgreeno2').value = 10;
+            document.getElementById('snumgreeno2').value = 10;
+            document.getElementById('sblueo3').value = 10;
+            document.getElementById('snumblueo3').value = 10;
+        });
+
+        function disableAllInputs() {
+            const allInputs = document.querySelectorAll(
+              '#pulseInputs input, #hexInputs input, #dyngradInputs input, #gradInputs input'
+            );
+            allInputs.forEach(input => input.disabled = true);
+        }
+
+        function enableInputsIn(containerId) {
+            const inputs = document.querySelectorAll(`#${containerId} input`);
+            inputs.forEach(input => input.disabled = false);
+        }
+
         function showInputs() {
-            document.getElementById('loadingInputs').classList.add('hidden');
-            document.getElementById('pulseInputs').classList.add('hidden');
-            document.getElementById('hexInputs').classList.add('hidden');
+            const allSections = ['loadingInputs', 'pulseInputs', 'hexInputs', 'rngInputs', 'rainbowInputs', 'dyngradInputs', 'gradInputs'];
+            disableAllInputs();  // <--- wichtig
+            allSections.forEach(id => document.getElementById(id).classList.add('hidden'));
 
             if (document.getElementById('loading').checked) {
                 document.getElementById('loadingInputs').classList.remove('hidden');
             } else if (document.getElementById('pulse').checked) {
                 document.getElementById('pulseInputs').classList.remove('hidden');
+                enableInputsIn('pulseInputs'); // <--- wichtig
             } else if (document.getElementById('hex').checked) {
                 document.getElementById('hexInputs').classList.remove('hidden');
+                enableInputsIn('hexInputs');
+            } else if (document.getElementById('dyngrad').checked) {
+                document.getElementById('dyngradInputs').classList.remove('hidden');
+                enableInputsIn('dyngradInputs');
+            } else if (document.getElementById('grad').checked) {
+                document.getElementById('gradInputs').classList.remove('hidden');
+                enableInputsIn('gradInputs');
             }
         }
         window.onload = showInputs;
@@ -137,6 +243,14 @@ HTML = """
         syncValues(document.getElementById('blue'), document.getElementById('numblue'));
         syncValues(document.getElementById('rangepulseo1'), document.getElementById('numpulseo1'));
         syncValues(document.getElementById('rangepulseo2'), document.getElementById('numpulseo2'));
+        syncValues(document.getElementById('rangesparkleo1'), document.getElementById('numsparkleo1'));
+        syncValues(document.getElementById('rangesparkleo2'), document.getElementById('numsparkleo2'));
+        syncValues(document.getElementById('redo1'), document.getElementById('numredo1'));
+        syncValues(document.getElementById('greeno2'), document.getElementById('numgreeno2'));
+        syncValues(document.getElementById('blueo3'), document.getElementById('numblueo3'));
+        syncValues(document.getElementById('sredo1'), document.getElementById('snumredo1'));
+        syncValues(document.getElementById('sgreeno2'), document.getElementById('snumgreeno2'));
+        syncValues(document.getElementById('sblueo3'), document.getElementById('snumblueo3'));
     </script>
   </div>
 </body>
@@ -149,31 +263,59 @@ def control():
     color_path = "./color.txt"
 
     # Load current values
-    running = os.path.exists(check_path) and open(check_path).read().strip() == "1"
+    running = False
     current_color = "2,2,10,0,0,0"
     if os.path.exists(color_path):
         current_color = open(color_path).read().strip()
 
-    red, green, blue, color_mode, o1, o2 = map(int, current_color.split(','))
+    red, green, blue, color_mode, o1, o2, o3 = map(int, current_color.split(','))
 
     if request.method == 'POST':
-        # Update color
+        # Update color and mode from form
         red = int(request.form.get('red', red))
         green = int(request.form.get('green', green))
         blue = int(request.form.get('blue', blue))
         color_mode = int(request.form.get('color_mode', color_mode))
-        o1 = int(request.form.get('o1', o1))
-        o2 = int(request.form.get('o2', o2))
-        with open(color_path, "w") as f:
-            f.write(f"{red},{green},{blue},{color_mode},{o1},{o2}")
 
-        # Toggle running state
-        running = not running
-        with open(check_path, "w") as f:
-            f.write("1" if running else "0")
+        if color_mode == 1:
+            o1 = int(request.form.get('pulse_o1', o1))
+            o2 = int(request.form.get('pulse_o2', o2))
+            o3 = 0
+        elif color_mode == 2:
+            o1 = int(request.form.get('hex_o1', o1))
+            o2 = int(request.form.get('hex_o2', o2))
+            o3 = 0
+        elif color_mode == 5:
+            o1 = int(request.form.get('dyngrad_o1', o1))
+            o2 = int(request.form.get('dyngrad_o2', o2))
+            o3 = int(request.form.get('dyngrad_o3', o3))
+        elif color_mode == 6:
+            o1 = int(request.form.get('grad_o1', o1))
+            o2 = int(request.form.get('grad_o2', o2))
+            o3 = int(request.form.get('grad_o3', o3))
+        else:
+            o1 = o2 = o3 = 0
+
+        # Write updated color data
+        with open(color_path, "w") as f:
+            f.write(f"{red},{green},{blue},{color_mode},{o1},{o2},{o3}")
+
+        # Toggle running state only if toggle button was pressed
+        if 'toggle' in request.form:
+            running = os.path.exists(check_path) and open(check_path).read().strip() == "1"
+            running = not running
+            with open(check_path, "w") as f:
+                f.write("1" if running else "0")
+
+        # Redirect to GET route to avoid resubmitting form on refresh
+        return redirect(url_for('control'))
+
+    # For GET requests, load the current running state
+    if os.path.exists(check_path):
+        running = open(check_path).read().strip() == "1"
 
     return render_template_string(HTML, red=red, green=green, blue=blue,
-                                  button_text="Stop" if running else "Start", color_mode=color_mode, o1=o1, o2=o2)
-
+                                  button_text="Stop" if running else "Start",
+                                  color_mode=color_mode, o1=o1, o2=o2, o3=o3)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)

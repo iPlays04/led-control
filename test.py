@@ -30,15 +30,16 @@ maxbrightness = 1
 def read_color():
     try:
         with open("./color.txt", "r") as f:
-            r, g, b, m, o1, o2, o3= map(int, f.read().strip().split(","))
-            return r,g,b, m, o1, o2, o3
+            r, g, b, speed, m, o1, o2, o3= map(int, f.read().strip().split(","))
+            #print(r, g, b, speed, m, o1, o2, o3)
+            return r,g,b, speed, m, o1, o2, o3
     except:
         return 2, 2, 10  # default color
 
-red = 255
+red = 200
 green = 0
 blue = 0
-mode = 2
+mode = 6
 o1 = 10
 o2 = 50
 o3 = 255
@@ -61,8 +62,8 @@ def drawLeds(pixels):
 
 def update_pixels():
     
-    global pixelclock, pixels, red, green, blue, mode, o1, o2, o3, traillen
-    #red, green, blue, mode, o1, o2, o3= read_color()
+    global pixelclock, pixels, red, green, blue, speed, mode, o1, o2, o3, traillen
+    red, green, blue, speed, mode, o1, o2, o3= read_color()
     #print(pixels)
     # Update the pixels based on the mode
     
@@ -90,7 +91,7 @@ def update_pixels():
                     pixels[i] = colourpixel(max(0, red - o2), max(0, green - o2), max(0, blue - o2))
                 for sparkle in sparkles:
                     if sparkle[1] <= 0:
-                        print(sparkle)
+                        #print(sparkle)
                         sparkles.remove(sparkle)
                         continue
                     pixels[sparkle[0]] = colourpixel(
@@ -98,7 +99,7 @@ def update_pixels():
                         max(0, int(green - o2 + sparkle[1])),
                         max(0, int(blue - o2 + sparkle[1]))
                     )
-                    sparkle[1] = sparkle[1]-3
+                    sparkle[1] = sparkle[1]-1
                     #print(sparkle)
 
             case 3: #rng
@@ -137,7 +138,7 @@ def update_pixels():
 
     drawLeds(pixels)
     pixelclock = (pixelclock + 1) % len(pixels)
-    root.after(100, update_pixels)  # Schedule the next update
+    root.after(251-speed, update_pixels)  # Schedule the next update
 
 # Initial drawing
 drawLeds(pixels)

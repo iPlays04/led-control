@@ -69,7 +69,10 @@ HTML = """
 
       <label>Blue:</label>
       <input type="range" id="blue" name="blue" min="0" max="255" value="{{ blue }}">
-      <input type="number" id="numblue" name="blue" min="0" max="255" value="{{ blue }}">
+      <input type="number" id="numblue" name="blue" min="0" max="255" value="{{ blue }}"><br>
+
+      <label>Speed:</label>
+      <input type="range" id="speed" name="speed" min="1" max="250" value="{{ speed }}">
       
       <br><br>
 
@@ -262,13 +265,15 @@ def control():
     check_path = "./check.txt"
     color_path = "./color.txt"
 
+    print(open(color_path).read())
+
     # Load current values
     running = False
     current_color = "2,2,10,0,0,0"
     if os.path.exists(color_path):
         current_color = open(color_path).read().strip()
 
-    red, green, blue, color_mode, o1, o2, o3 = map(int, current_color.split(','))
+    red, green, blue, speed, color_mode, o1, o2, o3 = map(int, current_color.split(','))
 
     if request.method == 'POST':
         # Update color and mode from form
@@ -276,6 +281,7 @@ def control():
         green = int(request.form.get('green', green))
         blue = int(request.form.get('blue', blue))
         color_mode = int(request.form.get('color_mode', color_mode))
+        speed = int(request.form.get('speed', speed))
 
         if color_mode == 1:
             o1 = int(request.form.get('pulse_o1', o1))
@@ -298,7 +304,7 @@ def control():
 
         # Write updated color data
         with open(color_path, "w") as f:
-            f.write(f"{red},{green},{blue},{color_mode},{o1},{o2},{o3}")
+            f.write(f"{red},{green},{blue},{speed},{color_mode},{o1},{o2},{o3}")
 
         # Toggle running state only if toggle button was pressed
         if 'toggle' in request.form:
@@ -314,7 +320,7 @@ def control():
     if os.path.exists(check_path):
         running = open(check_path).read().strip() == "1"
 
-    return render_template_string(HTML, red=red, green=green, blue=blue,
+    return render_template_string(HTML, red=red, green=green, blue=blue,speed=speed,
                                   button_text="Stop" if running else "Start",
                                   color_mode=color_mode, o1=o1, o2=o2, o3=o3)
 if __name__ == '__main__':

@@ -5,7 +5,7 @@ import colorsys
 from time import sleep
 
 
-pixels = neopixel.NeoPixel(board.D18, 24)
+pixels = neopixel.NeoPixel(board.D18, 150)
 
 
 #pixels.brightness(0.3)
@@ -19,8 +19,8 @@ sparkles = []
 def read_color():
     try:
         with open("./color.txt", "r") as f:
-            r, g, b, m, o1, o2 = map(int, f.read().strip().split(","))
-            return int(r,g,b), m, o1, o2
+            r, g, b, speed, m, o1, o2, o3 = map(int, f.read().strip().split(","))
+            return int(r,g,b), speed, m, o1, o2, o3
     except:
         return 2, 2, 10  # default color
 
@@ -41,52 +41,74 @@ while True: #all code gets executed once every update, all lights need to be ass
         running = False
 
     if running:
-        red, green, blue, mode, o1, o2= read_color()
+        red, green, blue, speed, mode, o1, o2, o3= read_color()
         match mode:
-            case 0:
-                for i in range(len(pixels)):
-                    pixels[i] = colourpixel(max(0, red), max(0, green), max(0, blue))
+                case 0:
+                    for i in range(len(pixels)):
+                        pixels[i] = colourpixel(max(0, red), max(0, green), max(0, blue))
 
-            case 1: #Light Pulse | o1 = overall length of pulse | o2 = max additional brightness in center of pulse !!to prevent overbrightness, same value is decresed from rest!!
-                for i in range(len(pixels)):
-                    pixels[i] = colourpixel(max(0, red - o2), max(0, green - o2), max(0, blue - o2))
-                for spec in range(o1):
-                    index = ((spec - (int(o1 / 2))) + pixelclock) % len(pixels)
-                    factor = abs(1 - abs(spec - (int(o1 / 2))) / int(o1 / 2))
-                    pixels[index] = colourpixel(
-                        max(int(factor * o2 + (red - o2)), 0),
-                        max(int(factor * o2 + (green - o2)), 0),
-                        max(int(factor * o2 + (blue - o2)), 0)
-                    )
+                case 1: #Light Pulse | o1 = overall length of pulse | o2 = max additional brightness in center of pulse !!to prevent overbrightness, same value is decresed from rest!!
+                    for i in range(len(pixels)):
+                        pixels[i] = colourpixel(max(0, red - o2), max(0, green - o2), max(0, blue - o2))
+                    for spec in range(o1):
+                        index = ((spec - (int(o1 / 2))) + pixelclock) % len(pixels)
+                        factor = abs(1 - abs(spec - (int(o1 / 2))) / int(o1 / 2))
+                        pixels[index] = colourpixel(
+                            max(int(factor * o2 + (red - o2)), 0),
+                            max(int(factor * o2 + (green - o2)), 0),
+                            max(int(factor * o2 + (blue - o2)), 0)
+                        )
 
-            case 2: #Sparkle
-                if random.random() * 100 < o1:
-                    sparkles.insert(0, [int(random.random() * len(pixels)), o2])
-                for i in range(len(pixels)):
-                    pixels[i] = colourpixel(max(0, red - o2), max(0, green - o2), max(0, blue - o2))
-                for sparkle in sparkles:
-                    if sparkle[1] <= 0:
-                        print(sparkle)
-                        sparkles.remove(sparkle)
-                        continue
-                    pixels[sparkle[0]] = colourpixel(
-                        max(0, int(red - o2 + sparkle[1])),
-                        max(0, int(green - o2 + sparkle[1])),
-                        max(0, int(blue - o2 + sparkle[1]))
-                    )
-                    sparkle[1] = sparkle[1]-3
-                    #print(sparkle)
+                case 2: #Sparkle
+                    if random.random() * 100 < o1:
+                        sparkles.insert(0, [int(random.random() * len(pixels)), o2])
+                    for i in range(len(pixels)):
+                        pixels[i] = colourpixel(max(0, red - o2), max(0, green - o2), max(0, blue - o2))
+                    for sparkle in sparkles:
+                        if sparkle[1] <= 0:
+                            sparkles.remove(sparkle)
+                            continue
+                        pixels[sparkle[0]] = colourpixel(
+                            max(0, int(red - o2 + sparkle[1])),
+                            max(0, int(green - o2 + sparkle[1])),
+                            max(0, int(blue - o2 + sparkle[1]))
+                        )
+                        sparkle[1] = sparkle[1]-1
 
-            case 3: #rng
-                for i in range(len(pixels)):
-                    pixels[i] = colourpixel(random.random()*255,random.random()*255,random.random()*255)
-                
-            case 4:  # RGB Rainbow Wave
-                for i in range(len(pixels)):
-                    hue = (pixelclock + i) / len(pixels)
-                    r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
-                    pixels[i] = colourpixel(r * 255, g * 255, b * 255)
+                case 3: #rng
+                    for i in range(len(pixels)):
+                        pixels[i] = colourpixel(random.random()*255,random.random()*255,random.random()*255)
+                    
+                case 4:  # RGB Rainbow Wave
+                    for i in range(len(pixels)):
+                        hue = (pixelclock + i) / len(pixels)
+                        r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
+                        pixels[i] = colourpixel(r * 255, g * 255, b * 255)
 
+                case 5: #dynamic 2 colour gradient
+                    half_length = len(pixels) // 2
+                    pixelclock_mod = pixelclock % len(pixels)
+
+                    for i in range(len(pixels)):
+                        gradient_factor = ((pixelclock_mod - i) % half_length) / half_length
+
+                        if (i > pixelclock_mod and i <= pixelclock_mod + half_length) or (i > pixelclock_mod - len(pixels) and i <= pixelclock_mod - len(pixels) + half_length):
+                            pixels[i] = colourpixel(
+                                max(0, red + gradient_factor * (o1 - red)),
+                                max(0, green + gradient_factor * (o2 - green)),
+                                max(0, blue + gradient_factor * (o3 - blue))
+                            )
+                        else:
+                            pixels[i] = colourpixel(
+                                max(0, o1 + gradient_factor * (red - o1)),
+                                max(0, o2 + gradient_factor * (green - o2)),
+                                max(0, o3 + gradient_factor * (blue - o3))
+                            )
+
+                case 6: #static 2 colour gradient
+                    for i in range(len(pixels)):
+                        pixels[i] = colourpixel(max(0, red + ((i)%(len(pixels))/(len(pixels))) * (o1-red)), max(0,  green + ((i)%(len(pixels))/(len(pixels))) * (o2-green)), max(0,  blue + ((i)%(len(pixels))/(len(pixels))) * (o3-blue)))
+        sleep((251-speed)/100)
 
 
                 

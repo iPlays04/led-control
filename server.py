@@ -160,6 +160,10 @@ HTML = """
 
       <br><br>
 
+      <button type="submit" name="ambitoggle" value="1">{{button_text2}}</button>
+
+      <br><br>
+
       <button type="submit" name="toggle" value="1">{{button_text}}</button>
     </form>
     <script>
@@ -269,11 +273,11 @@ def control():
 
     # Load current values
     running = False
-    current_color = "2,2,10,0,0,0"
+    current_color = "2,2,10,0,0,0,0"
     if os.path.exists(color_path):
         current_color = open(color_path).read().strip()
 
-    red, green, blue, speed, color_mode, o1, o2, o3 = map(int, current_color.split(','))
+    red, green, blue, speed, color_mode, o1, o2, o3, isAmbi = map(int, current_color.split(','))
 
     if request.method == 'POST':
         # Update color and mode from form
@@ -302,9 +306,12 @@ def control():
         else:
             o1 = o2 = o3 = 0
 
+        if 'ambitoggle' in request.form:
+            isAmbi = not isAmbi
+
         # Write updated color data
         with open(color_path, "w") as f:
-            f.write(f"{red},{green},{blue},{speed},{color_mode},{o1},{o2},{o3}")
+            f.write(f"{red},{green},{blue},{speed},{color_mode},{o1},{o2},{o3},{int(isAmbi)}")
 
         # Toggle running state only if toggle button was pressed
         if 'toggle' in request.form:
@@ -322,6 +329,7 @@ def control():
 
     return render_template_string(HTML, red=red, green=green, blue=blue,speed=speed,
                                   button_text="Stop" if running else "Start",
+                                  button_text2="Enable Ambilight" if not isAmbi else "Disable Ambilight",
                                   color_mode=color_mode, o1=o1, o2=o2, o3=o3)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)

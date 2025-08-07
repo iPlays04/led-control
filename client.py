@@ -10,19 +10,41 @@ pixels = neopixel.NeoPixel(board.D18, 150)
 
 #pixels.brightness(0.3)
 
+ambirange1 = (11,20)
+ambirange2 = (41,50)
+
 traillen = 16
 
 maxbrightness = 0.3
 
 sparkles = []
+ambibuffer = []
 
 def read_color():
     try:
         with open("./color.txt", "r") as f:
-            r, g, b, speed, m, o1, o2, o3 = map(int, f.read().strip().split(","))
-            return int(r,g,b), speed, m, o1, o2, o3
+            r, g, b, speed, m, o1, o2, o3, isAmbi = map(int, f.read().strip().split(","))
+            return int(r,g,b), speed, m, o1, o2, o3, isAmbi
     except:
         return 2, 2, 10  # default color
+
+def read_ambiColor(pcname):
+    global ambibuffer
+    try:
+        with open(f"./color_{pcname}.txt", "r") as f:
+            rgbvalues = f.read().strip().splitlines()
+            result = []
+            for value in rgbvalues:
+                splitvalues = value.split(",")
+                result.append(tuple(int(singlevalue) for singlevalue in splitvalues))
+            print(result)
+            if result != []:
+                ambibuffer = result
+                return result
+            else: 
+                return ambibuffer
+    except:
+        return "AAA"
 
 def colourpixel(r,g,b):
     nr=int(r*maxbrightness)
@@ -41,7 +63,7 @@ while True: #all code gets executed once every update, all lights need to be ass
         running = False
 
     if running:
-        red, green, blue, speed, mode, o1, o2, o3= read_color()
+        red, green, blue, speed, mode, o1, o2, o3, isAmbi= read_color()
         match mode:
                 case 0:
                     for i in range(len(pixels)):
@@ -108,6 +130,20 @@ while True: #all code gets executed once every update, all lights need to be ass
                 case 6: #static 2 colour gradient
                     for i in range(len(pixels)):
                         pixels[i] = colourpixel(max(0, red + ((i)%(len(pixels))/(len(pixels))) * (o1-red)), max(0,  green + ((i)%(len(pixels))/(len(pixels))) * (o2-green)), max(0,  blue + ((i)%(len(pixels))/(len(pixels))) * (o3-blue)))
+
+        if isAmbi:
+            i = ambirange1[0]
+            pc1 = read_ambiColor("testpc")
+            
+            while(i<ambirange1[1]):
+                pixels[i]=pc1[i-ambirange1[0]]
+                i+=1
+            i = ambirange2[0]
+            pc2 = read_ambiColor("testpc")
+            while(i<ambirange2[1]):
+                pixels[i]=pc2[i-ambirange2[0]]
+                i+=1
+
         sleep((251-speed)/100)
 
 

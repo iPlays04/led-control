@@ -27,22 +27,44 @@ sparkles = []
 
 maxbrightness = 1
 
+ambibuffer = [(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0)]
+
 def read_color():
     try:
         with open("./color.txt", "r") as f:
-            r, g, b, speed, m, o1, o2, o3= map(int, f.read().strip().split(","))
+            r, g, b, speed, m, o1, o2, o3, isAmbi= map(int, f.read().strip().split(","))
             #print(r, g, b, speed, m, o1, o2, o3)
-            return r,g,b, speed, m, o1, o2, o3
+            return r,g,b, speed, m, o1, o2, o3, isAmbi
     except:
         return 2, 2, 10  # default color
+
+def read_ambiColor(pcname):
+    global ambibuffer
+    try:
+        with open(f"./color_{pcname}.txt", "r") as f:
+            rgbvalues = f.read().strip().splitlines()
+            result = []
+            for value in rgbvalues:
+                splitvalues = value.split(",")
+                result.append(tuple(int(singlevalue) for singlevalue in splitvalues))
+            if result != []:
+                ambibuffer = result
+                return result
+            else: 
+                return ambibuffer
+    except:
+        return "AAA"
 
 red = 200
 green = 0
 blue = 0
-mode = 6
+mode = 0
 o1 = 10
 o2 = 50
 o3 = 255
+
+ambirange1 = (11,20)
+ambirange2 = (31,40)
 
 def colourpixel(r,g,b):
     nr=int(r*maxbrightness)
@@ -63,7 +85,7 @@ def drawLeds(pixels):
 def update_pixels():
     
     global pixelclock, pixels, red, green, blue, speed, mode, o1, o2, o3, traillen
-    red, green, blue, speed, mode, o1, o2, o3= read_color()
+    red, green, blue, speed, mode, o1, o2, o3, isAmbi= read_color()
     #print(pixels)
     # Update the pixels based on the mode
     
@@ -135,6 +157,19 @@ def update_pixels():
             case 6: #static 2 colour gradient
                 for i in range(len(pixels)):
                     pixels[i] = colourpixel(max(0, red + ((i)%(len(pixels))/(len(pixels))) * (o1-red)), max(0,  green + ((i)%(len(pixels))/(len(pixels))) * (o2-green)), max(0,  blue + ((i)%(len(pixels))/(len(pixels))) * (o3-blue)))
+
+    if isAmbi:
+            i = ambirange1[0]
+            pc1 = read_ambiColor("testpc")
+            
+            while(i<ambirange1[1]):
+                pixels[i]=pc1[i-ambirange1[0]]
+                i+=1
+            i = ambirange2[0]
+            pc2 = read_ambiColor("testpc")
+            while(i<ambirange2[1]):
+                pixels[i]=pc2[i-ambirange2[0]]
+                i+=1
 
     drawLeds(pixels)
     pixelclock = (pixelclock + 1) % len(pixels)

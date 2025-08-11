@@ -10,7 +10,7 @@ Testenv
 
 '''
 
-pixels = [(0, 0, 0)]*80
+pixels = [(0, 0, 0)]*150
 
 root = tk.Tk(screenName="ledtest")
 root.title("Basic Tkinter UI")
@@ -80,7 +80,7 @@ def rgb_to_hex(rgb):
 def drawLeds(pixels):
     canvas.delete("all")  # Clear the canvas before drawing
     for i, pixel in enumerate(pixels):
-        canvas.create_rectangle(i*20, 0, (i*20)+10, 10, fill=rgb_to_hex(pixel))
+        canvas.create_rectangle(i*10, 0, (i*10)+10, 10, fill=rgb_to_hex(pixel))
 
 def update_pixels():
     

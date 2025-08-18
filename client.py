@@ -23,8 +23,8 @@ ambibuffer = []
 def read_color():
     try:
         with open("./color.txt", "r") as f:
-            r, g, b, speed, m, o1, o2, o3, isAmbi = map(int, f.read().strip().split(","))
-            return int(r,g,b), speed, m, o1, o2, o3, isAmbi
+            r, g, b, speed, m, o1, o2, o3, isAmbi, brightness = map(int, f.read().strip().split(","))
+            return int(r,g,b), speed, m, o1, o2, o3, isAmbi, brightness
     except:
         return 2, 2, 10  # default color
 
@@ -63,7 +63,7 @@ while True: #all code gets executed once every update, all lights need to be ass
         running = False
 
     if running:
-        red, green, blue, speed, mode, o1, o2, o3, isAmbi= read_color()
+        red, green, blue, speed, mode, o1, o2, o3, isAmbi, brightness= read_color()
         match mode:
                 case 0:
                     for i in range(len(pixels)):
@@ -144,13 +144,16 @@ while True: #all code gets executed once every update, all lights need to be ass
                 pixels[i]=pc2[i-ambirange2[0]]
                 i+=1
 
+        for i in range(len(pixels)):
+            pixels[i] = (int(pixels[i][0]*(brightness/100)),int(pixels[i][1]*(brightness/100)),int(pixels[i][2]*(brightness/100)))
+
         sleep((251-speed)/100)
-
-
-                
+        
 
     else:
-        sleep(0.1)
+        for i in range(len(pixels)):
+            pixels[i] = colourpixel(0,0,0)
+        sleep(1)
 
     pixelclock = (pixelclock+1)%len(pixels)
 

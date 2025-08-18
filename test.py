@@ -32,11 +32,12 @@ ambibuffer = [(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0
 def read_color():
     try:
         with open("./color.txt", "r") as f:
-            r, g, b, speed, m, o1, o2, o3, isAmbi= map(int, f.read().strip().split(","))
+            r, g, b, speed, m, o1, o2, o3, isAmbi, brightness= map(int, f.read().strip().split(","))
             #print(r, g, b, speed, m, o1, o2, o3)
-            return r,g,b, speed, m, o1, o2, o3, isAmbi
+            return r,g,b, speed, m, o1, o2, o3, isAmbi, brightness
     except:
         return 2, 2, 10  # default color
+
 
 def read_ambiColor(pcname):
     global ambibuffer
@@ -85,7 +86,7 @@ def drawLeds(pixels):
 def update_pixels():
     
     global pixelclock, pixels, red, green, blue, speed, mode, o1, o2, o3, traillen
-    red, green, blue, speed, mode, o1, o2, o3, isAmbi= read_color()
+    red, green, blue, speed, mode, o1, o2, o3, isAmbi, brightness= read_color()
     #print(pixels)
     # Update the pixels based on the mode
     
@@ -171,6 +172,9 @@ def update_pixels():
                 pixels[i]=pc2[i-ambirange2[0]]
                 i+=1
 
+    for i in range(len(pixels)):
+        pixels[i] = (int(pixels[i][0]*(brightness/100)),int(pixels[i][1]*(brightness/100)),int(pixels[i][2]*(brightness/100)))
+
     drawLeds(pixels)
     pixelclock = (pixelclock + 1) % len(pixels)
     root.after(251-speed, update_pixels)  # Schedule the next update
@@ -179,6 +183,7 @@ def update_pixels():
 drawLeds(pixels)
 
 # Start the update loop
+
 root.after(100, update_pixels)
 
 # Start the Tkinter event loop

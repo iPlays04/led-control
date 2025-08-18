@@ -17,7 +17,7 @@ def control():
     if os.path.exists(color_path):
         current_color = open(color_path).read().strip()
 
-    red, green, blue, speed, color_mode, o1, o2, o3, isAmbi = map(int, current_color.split(','))
+    red, green, blue, speed, color_mode, o1, o2, o3, isAmbi, brightness = map(int, current_color.split(','))
 
     if request.method == 'POST':
         # Update color and mode from form
@@ -26,6 +26,7 @@ def control():
         blue = int(request.form.get('blue', blue))
         color_mode = int(request.form.get('color_mode', color_mode))
         speed = int(request.form.get('speed', speed))
+        brightness = int(request.form.get('brightness','brightness'))
 
         if color_mode == 1:
             o1 = int(request.form.get('pulse_o1', o1))
@@ -51,7 +52,7 @@ def control():
 
         # Write updated color data
         with open(color_path, "w") as f:
-            f.write(f"{red},{green},{blue},{speed},{color_mode},{o1},{o2},{o3},{int(isAmbi)}")
+            f.write(f"{red},{green},{blue},{speed},{color_mode},{o1},{o2},{o3},{int(isAmbi)},{brightness}")
 
         # Toggle running state only if toggle button was pressed
         if 'toggle' in request.form:
@@ -70,6 +71,6 @@ def control():
     return render_template('index.html', red=red, green=green, blue=blue,speed=speed,
                                   button_text="Stop" if running else "Start",
                                   button_text2="Enable Ambilight" if not isAmbi else "Disable Ambilight",
-                                  color_mode=color_mode, o1=o1, o2=o2, o3=o3)
+                                  color_mode=color_mode, o1=o1, o2=o2, o3=o3,brightness=brightness)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)

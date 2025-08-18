@@ -78,12 +78,7 @@ while True:
             print(f"An error occurred: {e}")
         i+=1
     sleep(0.1)
-    #print(content)
-    #print(computer_name)
-    #modify_remote_file("",22,"","","color_"+computer_name,content)
-    #to debug write in local file:::
-    #print(content.count("\n"))
-    #print(samples+1)
+    modify_remote_file("192.168.178.34",22,"jeremy","wüsstest du gern :/","led-control/color_"+computer_name,content)
     if content.count("\n") == samples+1:
         with open("color_testpc.txt", "w") as f:
                 f.write(content)

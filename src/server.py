@@ -2,7 +2,7 @@ from flask import Flask, request, redirect, render_template, url_for
 import os
 
 app = Flask(__name__)
-app.template_folder = os.path.abspath('./')
+#app.template_folder = os.path.abspath('./')
 
 @app.route('/', methods=['GET', 'POST'])
 def control():

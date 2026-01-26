@@ -166,8 +166,10 @@ def update_pixels():
             while(i<ambirange1[1]):
                 pixels[i]=pc1[i-ambirange1[0]]
                 i+=1
+
             i = ambirange2[0]
             pc2 = read_ambiColor("testpc")
+            
             while(i<ambirange2[1]):
                 pixels[i]=pc2[i-ambirange2[0]]
                 i+=1

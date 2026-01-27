@@ -1,160 +1,145 @@
+import os
 import board
-import neopixel
 import random
-import colorsys
+import neopixel
 from time import sleep
+import tkinter as tk
+import colorsys
 
+colorfile = "./color.txt"
+lastUpdateTime = os.path.getmtime(colorfile)
+activefile = "./check.txt"
+lastActiveUpdateTime = os.path.getmtime(activefile)
+defaultbrightness = 0.2
+pixelclock = 0 # Pixelclock indexes through every one LED each tick ! NOT for updating all LEDs, rather for moving effects
+sparkles = [] # List to save all Sparkling pixels
 
-pixels = neopixel.NeoPixel(board.D18, 150)
+#Strip init
+pixels = neopixel.NeoPixel(board.D18, n=150, brightness=defaultbrightness, auto_write=False)
 
-
-#pixels.brightness(0.3)
-
-ambirange1 = (11,20)
-ambirange2 = (41,50)
-
-traillen = 16
-
-maxbrightness = 0.3
-
-sparkles = []
-ambibuffer = []
+#Initialization sequence - 5x Flashing green
+for x in range(10):
+    for i in range(len(pixels)):
+        if(x%2 == 0):
+            pixels[i]=(0,255,0)
+        else:
+            pixels[i]=(0,0,0)
+    pixels.show()
 
 def read_color():
-    try:
-        with open("./color.txt", "r") as f:
-            r, g, b, speed, m, o1, o2, o3, isAmbi, brightness = map(int, f.read().strip().split(","))
-            return int(r,g,b), speed, m, o1, o2, o3, isAmbi, brightness
-    except:
-        return 2, 2, 10  # default color
+    global lastUpdateTime #To be able to modify it
+    currentUpdateTime = os.path.getmtime(colorfile)
+    if lastUpdateTime != currentUpdateTime:#If the actual modify date on the file does not match the last recorded modification, there has been an update.
+        lastUpdateTime = currentUpdateTime #That time is now the new last recorded update
+        try:
+            with open(colorfile, "r") as f:
+                values = list(map(int, f.read().strip().split(",")))
+                color_data = {
+                    "r": values[0],
+                    "g": values[1],
+                    "b": values[2],
+                    "speed": values[3],
+                    "mode": values[4],
+                    "o1": values[5],
+                    "o2": values[6],
+                    "o3": values[7],
+                    "isAmbi": values[8],
+                    "brightness": values[9]
+                }
+                pixels.brightness = defaultbrightness * min((color_data.brightness/100),1) #sets the strip objects own brightness value from 0 to the default brightness to avoid too much power draw
+                return color_data
+        except:
+            print("No color-file found")
+            return {"r": 20, "g": 0, "b": 0,"speed": 0, "m": 0,"o1": 0, "o2": 0, "o3": 0,"isAmbi": 0, "brightness": 100}
 
-def read_ambiColor(pcname):
-    global ambibuffer
-    try:
-        with open(f"./color_{pcname}.txt", "r") as f:
-            rgbvalues = f.read().strip().splitlines()
-            result = []
-            for value in rgbvalues:
-                splitvalues = value.split(",")
-                result.append(tuple(int(singlevalue) for singlevalue in splitvalues))
-            print(result)
-            if result != []:
-                ambibuffer = result
-                return result
-            else: 
-                return ambibuffer
-    except:
-        return "AAA"
-
-def colourpixel(r,g,b):
-    nr=int(r*maxbrightness)
-    ng=int(g*maxbrightness)
-    nb=int(b*maxbrightness)
-    return((nr,ng,nb))
-
-pixelclock = 0
-
-while True: #all code gets executed once every update, all lights need to be assigned a value here 
-    
-    try:
-        with open("./check.txt", "r") as f:
-            running = f.read().strip() == "1"
-    except:
-        running = False
-
-    if running:
-        red, green, blue, speed, mode, o1, o2, o3, isAmbi, brightness= read_color()
-        match mode:
-                case 0:
-                    for i in range(len(pixels)):
-                        pixels[i] = colourpixel(max(0, red), max(0, green), max(0, blue))
-
-                case 1: #Light Pulse | o1 = overall length of pulse | o2 = max additional brightness in center of pulse !!to prevent overbrightness, same value is decresed from rest!!
-                    for i in range(len(pixels)):
-                        pixels[i] = colourpixel(max(0, red - o2), max(0, green - o2), max(0, blue - o2))
-                    for spec in range(o1):
-                        index = ((spec - (int(o1 / 2))) + pixelclock) % len(pixels)
-                        factor = abs(1 - abs(spec - (int(o1 / 2))) / int(o1 / 2))
-                        pixels[index] = colourpixel(
-                            max(int(factor * o2 + (red - o2)), 0),
-                            max(int(factor * o2 + (green - o2)), 0),
-                            max(int(factor * o2 + (blue - o2)), 0)
-                        )
-
-                case 2: #Sparkle
-                    if random.random() * 100 < o1:
-                        sparkles.insert(0, [int(random.random() * len(pixels)), o2])
-                    for i in range(len(pixels)):
-                        pixels[i] = colourpixel(max(0, red - o2), max(0, green - o2), max(0, blue - o2))
-                    for sparkle in sparkles:
-                        if sparkle[1] <= 0:
-                            sparkles.remove(sparkle)
-                            continue
-                        pixels[sparkle[0]] = colourpixel(
-                            max(0, int(red - o2 + sparkle[1])),
-                            max(0, int(green - o2 + sparkle[1])),
-                            max(0, int(blue - o2 + sparkle[1]))
-                        )
-                        sparkle[1] = sparkle[1]-1
-
-                case 3: #rng
-                    for i in range(len(pixels)):
-                        pixels[i] = colourpixel(random.random()*255,random.random()*255,random.random()*255)
-                    
-                case 4:  # RGB Rainbow Wave
-                    for i in range(len(pixels)):
-                        hue = (pixelclock + i) / len(pixels)
-                        r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
-                        pixels[i] = colourpixel(r * 255, g * 255, b * 255)
-
-                case 5: #dynamic 2 colour gradient
-                    half_length = len(pixels) // 2
-                    pixelclock_mod = pixelclock % len(pixels)
-
-                    for i in range(len(pixels)):
-                        gradient_factor = ((pixelclock_mod - i) % half_length) / half_length
-
-                        if (i > pixelclock_mod and i <= pixelclock_mod + half_length) or (i > pixelclock_mod - len(pixels) and i <= pixelclock_mod - len(pixels) + half_length):
-                            pixels[i] = colourpixel(
-                                max(0, red + gradient_factor * (o1 - red)),
-                                max(0, green + gradient_factor * (o2 - green)),
-                                max(0, blue + gradient_factor * (o3 - blue))
-                            )
-                        else:
-                            pixels[i] = colourpixel(
-                                max(0, o1 + gradient_factor * (red - o1)),
-                                max(0, o2 + gradient_factor * (green - o2)),
-                                max(0, o3 + gradient_factor * (blue - o3))
-                            )
-
-                case 6: #static 2 colour gradient
-                    for i in range(len(pixels)):
-                        pixels[i] = colourpixel(max(0, red + ((i)%(len(pixels))/(len(pixels))) * (o1-red)), max(0,  green + ((i)%(len(pixels))/(len(pixels))) * (o2-green)), max(0,  blue + ((i)%(len(pixels))/(len(pixels))) * (o3-blue)))
-
-        if isAmbi:
-            i = ambirange1[0]
-            pc1 = read_ambiColor("testpc")
-            
-            while(i<ambirange1[1]):
-                pixels[i]=pc1[i-ambirange1[0]]
-                i+=1
-            i = ambirange2[0]
-            pc2 = read_ambiColor("testpc")
-            while(i<ambirange2[1]):
-                pixels[i]=pc2[i-ambirange2[0]]
-                i+=1
-
-        for i in range(len(pixels)):
-            pixels[i] = (int(pixels[i][0]*(brightness/100)),int(pixels[i][1]*(brightness/100)),int(pixels[i][2]*(brightness/100)))
-
-        sleep((251-speed)/100)
+def read_active():
+    global lastActiveUpdateTime #To be able to modify it
+    currentActiveUpdateTime = os.path.getmtime(colorfile)
+    if lastActiveUpdateTime != currentActiveUpdateTime:#If the actual modify date on the file does not match the last recorded modification, there has been an update.
+        lastActiveUpdateTime = currentActiveUpdateTime #That time is now the new last recorded update
+        try:
+            return open(activefile, "r").read()
+        except:
+            print("No activation-file found")
+            return 0
         
+#Main loop:
+while True:
+    if(read_active()==1):
 
-    else:
-        for i in range(len(pixels)):
-            pixels[i] = colourpixel(0,0,0)
-        sleep(1)
+        settings = read_color()
 
-    pixelclock = (pixelclock+1)%len(pixels)
+        match settings["mode"]:
 
+            case 0:
+                for i in range(len(pixels)):#Flat, single colour throughout the strip
+                    pixels[i] = (settings["r"],settings["g"],settings["b"])
 
+            case 1: #Light Pulse | o1 = overall length of pulse | o2 = max additional brightness in center of pulse !!to prevent overbrightness, same value is decresed from rest!!
+                for i in range(len(pixels)):
+                    pixels[i] = (max(0, settings["r"] - settings["o2"]), max(0, settings["g"] - settings["o2"]), max(0, settings["b"] - settings["o2"]))
+                for spec in range(settings["o1"]):
+                    index = ((spec - (int(settings["o1"] / 2))) + pixelclock) % len(pixels)
+                    factor = abs(1 - abs(spec - (int(settings["o1"] / 2))) / int(settings["o1"] / 2))
+                    pixels[index] = (
+                        max(int(factor * settings["o2"] + (settings["r"] - settings["o2"])), 0),
+                        max(int(factor * settings["o2"] + (settings["g"] - settings["o2"])), 0),
+                        max(int(factor * settings["o2"] + (settings["b"] - settings["o2"])), 0)
+                    )
+
+            case 2: #Sparkle
+                if random.random() * 100 < settings["o1"]:
+                    sparkles.insert(0, [int(random.random() * len(pixels)), settings["o2"]])
+                for i in range(len(pixels)):
+                    pixels[i] = (max(0, settings["r"] - settings["o2"]), max(0, settings["g"] - settings["o2"]), max(0, settings["b"] - settings["o2"]))
+                for sparkle in sparkles:
+                    if sparkle[1] <= 0:
+                        sparkles.remove(sparkle)
+                        continue
+                    sparkle[1] = sparkle[1]-1
+                    pixels[sparkle[0]] = (
+                        max(0, int(settings["r"] - settings["o2"] + sparkle[1])),
+                        max(0, int(settings["g"] - settings["o2"] + sparkle[1])),
+                        max(0, int(settings["b"] - settings["o2"] + sparkle[1]))
+                    )
+                    
+            case 3: #rng
+                for i in range(len(pixels)):
+                    pixels[i] = (random.random()*255,random.random()*255,random.random()*255)
+                
+            case 4:  # RGB Rainbow Wave
+                for i in range(len(pixels)):
+                    hue = (pixelclock + i) / len(pixels)
+                    r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
+                    pixels[i] = (r * 255, g * 255, b * 255)
+
+            case 5: #dynamic 2 colour gradient
+                half_length = len(pixels) // 2
+                pixelclock_mod = pixelclock % len(pixels)
+
+                for i in range(len(pixels)):
+                    gradient_factor = ((pixelclock_mod - i) % half_length) / half_length
+
+                    if (i > pixelclock_mod and i <= pixelclock_mod + half_length) or (i > pixelclock_mod - len(pixels) and i <= pixelclock_mod - len(pixels) + half_length):
+                        pixels[i] = (
+                            max(0, settings["r"] + gradient_factor * (settings["o1"] - settings["r"])),
+                            max(0, settings["g"] + gradient_factor * (settings["o2"] - settings["g"])),
+                            max(0, settings["b"] + gradient_factor * (settings["o3"] - settings["b"]))
+                        )
+                    else:
+                        pixels[i] = (
+                            max(0, settings["o1"]  + gradient_factor * (settings["r"] - settings["o1"])),
+                            max(0, settings["o2"]  + gradient_factor * (settings["g"] - settings["o2"])),
+                            max(0, settings["o3"]  + gradient_factor * (settings["b"] - settings["o3"]))
+                        )
+
+            case 6: #static 2 colour gradient
+                for i in range(len(pixels)):
+                    pixels[i] = (max(0, settings["r"] + ((i)%(len(pixels))/(len(pixels))) * (settings["o1"]-settings["r"])), max(0,  settings["g"] + ((i)%(len(pixels))/(len(pixels))) * (settings["o2"]-settings["g"])), max(0,  settings["b"] + ((i)%(len(pixels))/(len(pixels))) * (settings["o3"]-settings["b"])))
+    
+        pixelclock = (pixelclock+1)%len(pixels) # Pixelclock indexes through every one LED each tick ! NOT for updating all LEDs, rather for moving effects
+        pixels.show()
+        #end of IF
+
+    sleep(0.25)
+    #end of while true

@@ -14,9 +14,9 @@ pixels = [(0, 0, 0)]*150
 
 root = tk.Tk(screenName="ledtest")
 root.title("Basic Tkinter UI")
-root.geometry("1600x200")
+root.geometry("1600x12")
 root.configure(bg="BLACK")
-canvas = tk.Canvas(root, width=1600, height=200,bg="BLACK")
+canvas = tk.Canvas(root, width=1600, height=12,bg="BLACK")
 canvas.pack()
 
 pixelclock = 0

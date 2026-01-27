@@ -24,7 +24,12 @@ for x in range(10):
             pixels[i]=(0,255,0)
         else:
             pixels[i]=(0,0,0)
-    pixels.show()
+            
+    pixels.show()        
+    if(x%2 == 0):
+        sleep(0.1)
+    else:
+        sleep(0.4)
 
 def read_color():
     global lastUpdateTime #To be able to modify it
@@ -105,8 +110,11 @@ while True:
                     
             case 3: #rng
                 for i in range(len(pixels)):
-                    pixels[i] = (random.random()*255,random.random()*255,random.random()*255)
-                
+                    pixels[i] = (0,0,0)
+                    pixels[pixelclock] = (settings["r"], settings["g"], settings["b"])
+                    pixels[(pixelclock-1)/len(pixels)] = (int(settings["r"]/2), int(settings["g"]/2), int(settings["b"]/2))
+                    pixels[(pixelclock-2)/len(pixels)] = (int(settings["r"]/3), int(settings["g"]/3), int(settings["b"]/3))
+
             case 4:  # RGB Rainbow Wave
                 for i in range(len(pixels)):
                     hue = (pixelclock + i) / len(pixels)

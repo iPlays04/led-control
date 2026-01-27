@@ -127,7 +127,11 @@ def update_pixels():
 
             case 3: #rng
                 for i in range(len(pixels)):
-                    pixels[i] = colourpixel(random.random()*255,random.random()*255,random.random()*255)
+                    pixels[i] = (0,0,0)
+                    pixels[(pixelclock+1)%len(pixels)] = (int(red/4), int(green/4), int(blue/4))
+                    pixels[pixelclock] = (red, green, blue)
+                    pixels[(pixelclock-1)%len(pixels)] = (int(red/2), int(green/2), int(blue/2))
+                    pixels[(pixelclock-2)%len(pixels)] = (int(red/3), int(green/3), int(blue/3))
                 
             case 4:  # RGB Rainbow Wave
                 for i in range(len(pixels)):
@@ -158,6 +162,30 @@ def update_pixels():
             case 6: #static 2 colour gradient
                 for i in range(len(pixels)):
                     pixels[i] = colourpixel(max(0, red + ((i)%(len(pixels))/(len(pixels))) * (o1-red)), max(0,  green + ((i)%(len(pixels))/(len(pixels))) * (o2-green)), max(0,  blue + ((i)%(len(pixels))/(len(pixels))) * (o3-blue)))
+            
+            case 10: # Fire/Candle Flicker
+                # Base color for fire (e.g., orange-red)
+                base_hue = (o3 / 360.0) + (15 / 360.0) # Start around orange (15-30 degrees)
+                base_saturation = 1.0
+                base_value = 1.0 # Max brightness for calculation
+
+                for i in range(len(pixels)):
+                    # Introduce randomness for flicker
+                    # o2 controls how often pixels change (higher o2 means more frequent changes)
+                    if random.random() < (o2 / 10.0): # Adjust probability based on o2
+                        # Random brightness variation based on o1
+                        brightness_variation = (random.random() * (o1 / 100.0))
+                        current_value = max(0.1, base_value - brightness_variation) # Ensure it doesn't go completely dark
+
+                        # Slight random hue shift for more natural fire look
+                        hue_shift = (random.random() - 0.5) * (o3 / 1000.0) # Small shift around base_hue
+                        current_hue = (base_hue + hue_shift) % 1.0
+
+                        r, g, b = colorsys.hsv_to_rgb(current_hue, base_saturation, current_value)
+                        pixels[i] = colourpixel(int(r * 255), int(g * 255), int(b * 255))
+                    # If not changing, keep the previous color (or slowly fade, more complex)
+                    # For simplicity, this version only updates a subset of pixels each tick
+                    # A more advanced version would store pixel states and fade them.
 
     if isAmbi:
             i = ambirange1[0]

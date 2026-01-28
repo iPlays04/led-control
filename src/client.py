@@ -13,6 +13,7 @@ lastActiveUpdateTime = os.path.getmtime(activefile)
 defaultbrightness = 0.2
 pixelclock = 0 # Pixelclock indexes through every one LED each tick ! NOT for updating all LEDs, rather for moving effects
 sparkles = [] # List to save all Sparkling pixels
+ambibuffer = [] # Temporarily stores values for ambi-lighting
 
 #Strip init
 pixels = neopixel.NeoPixel(board.D18, n=150, brightness=defaultbrightness, auto_write=False)
@@ -32,41 +33,59 @@ for x in range(10):
         sleep(0.4)
 
 def read_color():
-    global lastUpdateTime #To be able to modify it
-    currentUpdateTime = os.path.getmtime(colorfile)
-    if lastUpdateTime != currentUpdateTime:#If the actual modify date on the file does not match the last recorded modification, there has been an update.
-        lastUpdateTime = currentUpdateTime #That time is now the new last recorded update
-        try:
-            with open(colorfile, "r") as f:
-                values = list(map(int, f.read().strip().split(",")))
-                color_data = {
-                    "r": values[0],
-                    "g": values[1],
-                    "b": values[2],
-                    "speed": values[3],
-                    "mode": values[4],
-                    "o1": values[5],
-                    "o2": values[6],
-                    "o3": values[7],
-                    "isAmbi": values[8],
-                    "brightness": values[9]
-                }
-                pixels.brightness = defaultbrightness * min((color_data.brightness/100),1) #sets the strip objects own brightness value from 0 to the default brightness to avoid too much power draw
-                return color_data
-        except:
-            print("No color-file found")
-            return {"r": 20, "g": 0, "b": 0,"speed": 0, "m": 0,"o1": 0, "o2": 0, "o3": 0,"isAmbi": 0, "brightness": 100}
+#    global lastUpdateTime #To be able to modify it
+#    currentUpdateTime = os.path.getmtime(colorfile)
+#    if lastUpdateTime != currentUpdateTime:#If the actual modify date on the file does not match the last recorded modification, there has been an update.
+#        lastUpdateTime = currentUpdateTime #That time is now the new last recorded update
+    try:
+        with open(colorfile, "r") as f:
+            values = list(map(int, f.read().strip().split(",")))
+            color_data = {
+                "r": values[0],
+                "g": values[1],
+                "b": values[2],
+                "speed": values[3],
+                "mode": values[4],
+                "o1": values[5],
+                "o2": values[6],
+                "o3": values[7],
+                "isAmbi": values[8],
+                "brightness": values[9]
+            }
+            pixels.brightness = defaultbrightness * min((color_data.brightness/100),1) #sets the strip objects own brightness value from 0 to the default brightness to avoid too much power draw
+            return color_data
+    except:
+        print("No color-file found")
+        return {"r": 20, "g": 0, "b": 0,"speed": 0, "m": 0,"o1": 0, "o2": 0, "o3": 0,"isAmbi": 0, "brightness": 100}
 
 def read_active():
-    global lastActiveUpdateTime #To be able to modify it
-    currentActiveUpdateTime = os.path.getmtime(colorfile)
-    if lastActiveUpdateTime != currentActiveUpdateTime:#If the actual modify date on the file does not match the last recorded modification, there has been an update.
-        lastActiveUpdateTime = currentActiveUpdateTime #That time is now the new last recorded update
-        try:
-            return open(activefile, "r").read()
-        except:
-            print("No activation-file found")
-            return 0
+#    global lastActiveUpdateTime #To be able to modify it
+#    currentActiveUpdateTime = os.path.getmtime(colorfile)
+#    if lastActiveUpdateTime != currentActiveUpdateTime:#If the actual modify date on the file does not match the last recorded modification, there has been an update.
+#        lastActiveUpdateTime = currentActiveUpdateTime #That time is now the new last recorded update
+    try:
+        return open(activefile, "r").read()
+    except:
+        print("No activation-file found")
+        return 0
+    
+def read_ambiColor(pcname):
+    global ambibuffer
+    try:
+        with open(f"./color_{pcname}.txt", "r") as f:
+            rgbvalues = f.read().strip().splitlines()
+            result = []
+            for value in rgbvalues:
+                splitvalues = value.split(",")
+                result.append(tuple(int(singlevalue) for singlevalue in splitvalues))
+            print(result)
+            if result != []:
+                ambibuffer = result
+                return result
+            else: 
+                return ambibuffer
+    except:
+        return "AAA"
         
 #Main loop:
 while True:
@@ -144,7 +163,22 @@ while True:
             case 6: #static 2 colour gradient
                 for i in range(len(pixels)):
                     pixels[i] = (max(0, settings["r"] + ((i)%(len(pixels))/(len(pixels))) * (settings["o1"]-settings["r"])), max(0,  settings["g"] + ((i)%(len(pixels))/(len(pixels))) * (settings["o2"]-settings["g"])), max(0,  settings["b"] + ((i)%(len(pixels))/(len(pixels))) * (settings["o3"]-settings["b"])))
-    
+
+        ambirange1 = (11,20)
+        ambirange2 = (41,50)
+        if settings["isAmbi"]:
+            i = ambirange1[0]
+            pc1 = read_ambiColor("testpc")
+            
+            while(i<ambirange1[1]):
+                pixels[i]=pc1[i-ambirange1[0]]
+                i+=1
+            i = ambirange2[0]
+            pc2 = read_ambiColor("testpc")
+            while(i<ambirange2[1]):
+                pixels[i]=pc2[i-ambirange2[0]]
+                i+=1
+
         pixelclock = (pixelclock+1)%len(pixels) # Pixelclock indexes through every one LED each tick ! NOT for updating all LEDs, rather for moving effects
         pixels.show()
         #end of IF
